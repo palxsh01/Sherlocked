@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimiter from "./middleware/rateLimiter.js";
-import sherlockedRoutes from "./routes/sherlockedRoutes.js"
+import suspectRoutes from "./routes/suspectRoutes.js"
 import connectDB from "./config/database.js";
 import dotenv from "dotenv";
 
@@ -12,10 +12,10 @@ const PORT = process.env.PORT;
 app.use(express.json());
 app.use(rateLimiter);
 
-app.use("/sherlocked/", sherlockedRoutes);
+app.use("/api/suspects/", suspectRoutes);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
-        console.log(`Server started on http://localhost:${PORT}/sherlocked/`);
+        console.log(`Server started on http://localhost:${PORT}/api/`);
     })
 });
