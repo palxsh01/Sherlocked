@@ -20,7 +20,7 @@ export async function getSuspect(req, res) {
     
     res.status(200).json(suspect);
   } catch (error) {
-    console.error("Error in getNote controller", error);
+    console.error("Error in getSuspect controller", error);
     res.status(500).json({ message: "Internal server error." });
   }
 }
