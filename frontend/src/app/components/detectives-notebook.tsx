@@ -1,4 +1,6 @@
-import { BookOpen, Lightbulb, Target, AlertTriangle, CheckCircle } from 'lucide-react';
+import { BookOpen, Lightbulb, Target, AlertTriangle, CheckCircle, Lock, LoaderIcon } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { useState } from 'react';
 
 const tips = [
   {
@@ -67,16 +69,19 @@ const tips = [
   },
 ];
 
-const hints = [
-  'Pay attention to who had access to the library at night',
-  'The security camera being covered wasn\'t random - this shows premeditation',
-  'Consider who would know the victim\'s schedule and usual meeting spots',
-  'Not everyone who appears suspicious is guilty - some are just hiding unrelated secrets',
-  'The weapon being from the library collection is significant - who has access?',
-  'Timeline is crucial: some alibis might technically be true but still allow time for the crime',
-];
-
 export function DetectivesNotebook() {
+  const [loading, setLoading] = useState(true);
+  const { eventSettings } = useApp();
+
+  if (!eventSettings.isActive && !eventSettings.startTime) {
+    return (
+      <div className="text-center py-12">
+        <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-xl mb-2">The event is not live right now.</h3>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
@@ -113,26 +118,6 @@ export function DetectivesNotebook() {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Subtle Hints */}
-      <div className="mb-12">
-        <h3 className="text-2xl mb-6 flex items-center gap-2">
-          <Lightbulb className="w-6 h-6 text-primary" />
-          Subtle Hints
-        </h3>
-        <div className="p-6 bg-card border border-border rounded-lg">
-          <div className="space-y-3">
-            {hints.map((hint, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs text-primary font-medium">{index + 1}</span>
-                </div>
-                <p className="text-sm text-foreground/90 leading-relaxed">{hint}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

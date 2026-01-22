@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { UserCircle, Check, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useApp } from '../context/AppContext';
+import { UserCircle, Check, X, Lock, LoaderIcon } from 'lucide-react';
+import api from '../../../lib/axios';
 
 interface Suspect {
-  id: string;
+  _id: string;
   name: string;
   role: string;
   age: number;
@@ -10,85 +12,36 @@ interface Suspect {
   relationship: string;
   alibi: string;
   motive: string;
-  evidenceLinks: string[];
 }
 
-const suspects: Suspect[] = [
-  {
-    id: 's1',
-    name: 'Dr. Rebecca Martinez',
-    role: 'Associate Professor, Biology Department',
-    age: 42,
-    background:
-      'Tenured professor with 15 years at the university. Known for ambitious research projects and competitive nature. Recently passed over for department chair position that went to the victim.',
-    relationship: 'Professional rival and colleague',
-    alibi:
-      'Claims she was at home alone working on grant proposals. No witnesses. Phone location data shows phone was at her residence, but she could have left it there.',
-    motive:
-      'Long-standing professional rivalry over research funding and academic recognition. Recent email exchanges show escalating tension. The victim allegedly had evidence of research misconduct.',
-    evidenceLinks: ['Email Thread - Faculty Dispute', 'Financial Records'],
-  },
-  {
-    id: 's2',
-    name: 'Sarah Kim',
-    role: 'Graduate Student, Research Assistant',
-    age: 26,
-    background:
-      'Brilliant third-year Ph.D. student working under Prof. Chen. Reputation as hardworking and dedicated. Recently expressed concerns about her thesis timeline and funding.',
-    relationship: 'Student and research assistant to the victim',
-    alibi:
-      'States she was supposed to meet Prof. Chen at 11:30 PM but arrived late (11:50 PM). Claims she was at the library earlier but left at 10:30 PM. Coffee shop receipt confirms purchase at 11:00 PM.',
-    motive:
-      'Potentially frustrated with demanding supervisor. Victim controlled her funding and thesis approval. However, had strong professional relationship and career depended on his support.',
-    evidenceLinks: ['Witness Statement - Graduate Student', "Victim's Phone - Last Calls"],
-  },
-  {
-    id: 's3',
-    name: 'Thomas Park',
-    role: 'Head Janitor, Facilities Department',
-    age: 51,
-    background:
-      '20 years at the university. Quiet, reliable employee. Recently filed complaints about professor mistreatment. Has access to all campus buildings at night.',
-    relationship: 'University staff member',
-    alibi:
-      'Was working night shift cleaning the science building. Security logs confirm he badged into the building at 10:00 PM but no record of leaving or entering other buildings. Says he never left the science building.',
-    motive:
-      'Prof. Chen filed multiple complaints about cleaning standards, threatened Thomas\'s job security. Had heated confrontation two weeks prior. However, Thomas has no history of violence.',
-    evidenceLinks: ['Financial Records', 'Physical Evidence - Weapon'],
-  },
-  {
-    id: 's4',
-    name: 'Detective James Morrison',
-    role: 'Campus Police Department',
-    age: 38,
-    background:
-      'Former city police detective, joined campus security 3 years ago. Known as thorough investigator. Has history with the victim from previous incident.',
-    relationship: 'Campus security',
-    alibi:
-      'On duty but claims he was on patrol on the opposite side of campus when the incident occurred. Dashboard camera shows his patrol car in that area at 11:30 PM, but there\'s a 20-minute gap in footage.',
-    motive:
-      'Prof. Chen filed formal complaint against Morrison last year alleging harassment during investigation of lab break-in. Could have held grudge. But professional reputation would be ruined if caught.',
-    evidenceLinks: ['Witness Statement - Campus Security Guard', 'Security Footage - Parking Lot'],
-  },
-  {
-    id: 's5',
-    name: 'Marcus Thompson',
-    role: 'Night Security Guard',
-    age: 29,
-    background:
-      'Part-time security guard, full-time law student. Generally observant and conscientious. First on scene after the murder.',
-    relationship: 'Campus security',
-    alibi:
-      'Was on duty making rounds. First to discover the body and call for help. Timeline accounts for his movements, supported by security badge scans.',
-    motive:
-      'No apparent motive. Did not know victim personally. However, was first on scene and had opportunity to disturb evidence.',
-    evidenceLinks: ['Witness Statement - Campus Security Guard', 'Crime Scene Photo - Library Entrance'],
-  },
-];
-
 export function SuspectsPage() {
-  const [selectedSuspect, setSelectedSuspect] = useState<Suspect | null>(suspects[0]);
+  const { eventSettings } = useApp();
+  const [suspects, setSuspects] = useState<Suspect[]>([]);
+  const [selectedSuspect, setSelectedSuspect] = useState<Suspect | null>(null);
   const [suspectStatus, setSuspectStatus] = useState<Record<string, 'cleared' | 'suspected' | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSuspects = async () => {
+      try {
+        const res = await api.get("/suspects");
+        console.log(res.data);
+        setSuspects(res.data);
+      } catch (error) {
+        console.log("Error in fetchSuspects");
+      } finally {
+        setLoading(false);
+      }
+    }
+  
+    fetchSuspects();
+  }, [])
+
+  useEffect(() => {
+    if (suspects.length > 0 && !selectedSuspect) {
+      setSelectedSuspect(suspects[0]);
+    }
+  }, [suspects, selectedSuspect]); 
 
   const toggleSuspectStatus = (id: string, status: 'cleared' | 'suspected') => {
     setSuspectStatus((prev) => ({
@@ -97,7 +50,22 @@ export function SuspectsPage() {
     }));
   };
 
-  
+  if (!eventSettings.isActive && !eventSettings.startTime) {
+    return (
+      <div className="text-center py-12">
+        <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-xl mb-2">The event is not live right now.</h3>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <LoaderIcon className="animate-spin size-10" />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -113,10 +81,10 @@ export function SuspectsPage() {
         <div className="lg:col-span-1 space-y-3">
           {suspects.map((suspect) => (
             <button
-              key={suspect.id}
+              key={suspect._id}
               onClick={() => setSelectedSuspect(suspect)}
               className={`w-full text-left p-4 rounded-lg border transition-all relative ${
-                selectedSuspect?.id === suspect.id
+                selectedSuspect?._id === suspect._id
                   ? 'bg-primary/10 border-primary'
                   : 'bg-card border-border hover:border-primary/50'
               }`}
@@ -126,7 +94,6 @@ export function SuspectsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium mb-1">{suspect.name}</div>
                   <div className="text-sm text-muted-foreground line-clamp-1">{suspect.role}</div>
-                  
                 </div>
               </div>
 
@@ -135,10 +102,10 @@ export function SuspectsPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleSuspectStatus(suspect.id, 'cleared');
+                    toggleSuspectStatus(suspect._id, 'cleared');
                   }}
                   className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                    suspectStatus[suspect.id] === 'cleared'
+                    suspectStatus[suspect._id] === 'cleared'
                       ? 'bg-green-600 text-white'
                       : 'bg-muted hover:bg-green-600/20'
                   }`}
@@ -149,10 +116,10 @@ export function SuspectsPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleSuspectStatus(suspect.id, 'suspected');
+                    toggleSuspectStatus(suspect._id, 'suspected');
                   }}
                   className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                    suspectStatus[suspect.id] === 'suspected'
+                    suspectStatus[suspect._id] === 'suspected'
                       ? 'bg-red-600 text-white'
                       : 'bg-muted hover:bg-red-600/20'
                   }`}
@@ -213,20 +180,6 @@ export function SuspectsPage() {
                   <div className="text-sm text-muted-foreground mb-2">Potential Motive</div>
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="leading-relaxed">{selectedSuspect.motive}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm text-muted-foreground mb-2">Related Evidence</div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedSuspect.evidenceLinks.map((link) => (
-                      <div
-                        key={link}
-                        className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm border border-primary/20"
-                      >
-                        {link}
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>

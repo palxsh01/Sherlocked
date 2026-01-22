@@ -17,18 +17,38 @@ export function AdminDashboard() {
       isActive: true,
       startTime: now.toISOString(),
       endTime: endTime.toISOString(),
+      remainingDuration: null,
     });
   };
 
   const pauseEvent = () => {
-    updateEventSettings({
-      isActive: false,
-    });
+    if (eventSettings.endTime) {
+      const now = new Date();
+      const endTime = new Date(eventSettings.endTime);
+      const remainingDuration = endTime.getTime() - now.getTime();
+      
+      updateEventSettings({
+        isActive: false,
+        endTime: null,
+        remainingDuration: remainingDuration > 0 ? remainingDuration : 0,
+      });
+    } else {
+      updateEventSettings({
+        isActive: false,
+        endTime: null,
+      });
+    }
   };
 
   const resumeEvent = () => {
+    const now = new Date();
+    const remainingDuration = eventSettings.remainingDuration || 0;
+    const endTime = new Date(now.getTime() + remainingDuration);
+    
     updateEventSettings({
       isActive: true,
+      endTime: endTime.toISOString(),
+      remainingDuration: null,
     });
   };
 
@@ -50,6 +70,7 @@ export function AdminDashboard() {
         isActive: false,
         startTime: null,
         endTime: null,
+        remainingDuration: null,
         currentWave: 0,
       });
       localStorage.removeItem("sherlocked_progress");
@@ -100,16 +121,23 @@ export function AdminDashboard() {
                 </span>
               </div>
             )}
-            {eventSettings.endTime && (
+            {eventSettings.endTime ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ends:</span>
                 <span>
                   {new Date(eventSettings.endTime).toLocaleTimeString()}
                 </span>
               </div>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ends:</span>
+                <span>
+                  Paused
+                </span>
+              </div>
             )}
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Current Wave:</span>
+              <span className="text-muted-foreground">Current Phase:</span>
               <span>
                 {eventSettings.currentWave} / {eventSettings.maxWaves}
               </span>
@@ -170,7 +198,7 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div>
                 <div className="font-medium">
-                  Wave {eventSettings.currentWave + 1}
+                  Phase {eventSettings.currentWave + 1}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Next evidence set

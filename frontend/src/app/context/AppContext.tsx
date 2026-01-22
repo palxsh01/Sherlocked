@@ -10,6 +10,7 @@ interface EventSettings {
   isActive: boolean;
   startTime: string | null;
   endTime: string | null;
+  remainingDuration: number | null; // milliseconds remaining when paused
   currentWave: number;
   maxWaves: number;
 }
@@ -34,6 +35,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isActive: false,
     startTime: null,
     endTime: null,
+    remainingDuration: null,
     currentWave: 0,
     maxWaves: 3,
   });
