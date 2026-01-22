@@ -1,4 +1,4 @@
-import express from "express"
+import express from "express";
 import { getAllSuspects, getSuspect, newSuspect, updateSuspect, deleteSuspect } from "../controllers/suspectControllers.js";
 const router = express.Router();
 

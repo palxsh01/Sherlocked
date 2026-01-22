@@ -1,4 +1,4 @@
-import Evidence from "../models/evidence";
+import Evidence from "../models/evidenceModel.js";
 
 export async function getAllEvidence(req, res) {
   try {
@@ -27,15 +27,15 @@ export async function getEvidence(req, res) {
 //For Admin Users Only
 export async function newEvidence(req, res) {
   try {
-    const { phase, title, media, description, details } =
-      req.body;
+    const { phase, title, type, media, description, details } = req.body;
 
     const newEvidence = new Evidence({
       phase: phase,
       title: title,
+      type: type,
       media: media,
       description: description,
-      details: details
+      details: details,
     });
 
     await newEvidence.save();
@@ -49,17 +49,16 @@ export async function newEvidence(req, res) {
 
 export async function updateEvidence(req, res) {
   try {
-    const { name, role, age, background, relationship, alibi, motive } =
+    const { phase, title, type, media, description, details } =
       req.body;
 
     const updatedEvidence = await Evidence.findByIdAndUpdate(req.params.id, {
-      name,
-      role,
-      age,
-      background,
-      relationship,
-      alibi,
-      motive,
+      phase,
+      title,
+      type,
+      media,
+      description,
+      details,
     });
 
     if (!updatedEvidence)

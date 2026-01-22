@@ -1,6 +1,7 @@
 import express from "express";
 import rateLimiter from "./middleware/rateLimiter.js";
 import suspectRoutes from "./routes/suspectRoutes.js"
+import evidenceRoutes from "./routes/evidenceRoutes.js"
 import connectDB from "./config/database.js";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(rateLimiter);
 
 app.use("/api/suspects/", suspectRoutes);
+app.use("/api/evidence/", evidenceRoutes);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
