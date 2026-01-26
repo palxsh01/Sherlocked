@@ -308,8 +308,7 @@ export function AdminDashboard() {
       <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
         <div className="text-sm text-foreground/90">
           <strong>Admin Controls:</strong> Use this dashboard to manage the
-          event flow. Start the event timer, release evidence in waves, and
-          monitor participant progress. All settings are saved automatically.
+          event flow. All settings are saved automatically.
         </div>
       </div>
     </div>

@@ -27,7 +27,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const ADMIN_EMAILS = ['admin@sherlocked.com', 'organizer@sherlocked.com'];
+const ADMIN_EMAILS = ['aK9m3XpRj2Lw@sherlocked.com'];
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -53,7 +53,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string, name: string) => {
-    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
     const newUser = { email, name, isAdmin };
     setUser(newUser);
     localStorage.setItem('sherlocked_user', JSON.stringify(newUser));

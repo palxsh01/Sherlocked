@@ -29,27 +29,24 @@ export function Footer() {
           {/* Social Media */}
           <div>
             <h3 className="text-lg mb-4">Follow Us</h3>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
+            <div className="flex flex-col gap-3">
               <a
                 href="https://www.instagram.com/elas.bphc"
-                className="p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                aria-label="Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors w-fit"
               >
                 <Instagram className="w-5 h-5" />
+                <p>ELAS BPHC</p>
               </a>
               <a
-                href="#"
-                className="p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
-                aria-label="Facebook"
+                href="https://www.instagram.com/vm.bphc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors w-fit"
               >
-                <Facebook className="w-5 h-5" />
+                <Instagram className="w-5 h-5" />
+                <p>Verba Maximus BPHC</p>
               </a>
             </div>
           </div>
@@ -67,7 +64,8 @@ export function Footer() {
               </div>
             </div>
             <div className="text-sm text-muted-foreground italic">
-              All characters and events are fictional. Any resemblance to real persons or events is purely coincidental.
+              All characters and events are fictional. Any resemblance to real
+              persons or events is purely coincidental.
             </div>
           </div>
         </div>

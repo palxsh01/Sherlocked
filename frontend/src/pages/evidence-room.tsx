@@ -8,6 +8,9 @@ import {
   AlertCircle,
   Lock,
   LoaderIcon,
+  ZoomIn,
+  ZoomOut,
+  X,
 } from "lucide-react";
 
 interface Evidence {
@@ -25,6 +28,8 @@ export function EvidenceRoom() {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
     const fetchEvidence = async () => {
@@ -42,6 +47,12 @@ export function EvidenceRoom() {
     fetchEvidence();
   }, []);
 
+  useEffect(() => {
+    if (!isImageModalOpen) {
+      setZoomLevel(1);
+    }
+  }, [isImageModalOpen]);
+
   const availableEvidence = evidence.filter(
     (e) => e.phase <= eventSettings.currentWave
   );
@@ -56,6 +67,23 @@ export function EvidenceRoom() {
         return Phone;
       case "forensic":
         return AlertCircle;
+    }
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
     }
   };
 
@@ -181,6 +209,7 @@ export function EvidenceRoom() {
                     <img
                       src={selectedEvidence.media}
                       alt={selectedEvidence.title}
+                      onClick={() => setIsImageModalOpen(true)}
                       className="max-h-96 w-full object-contain rounded-md"
                       loading="lazy"
                     />
@@ -221,6 +250,70 @@ export function EvidenceRoom() {
           )}
         </div>
       </div>
+
+      {isImageModalOpen && selectedEvidence?.media && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsImageModalOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2 bg-black/50 rounded-full p-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomOut();
+                }}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                aria-label="Zoom out"
+              >
+                <ZoomOut className="w-5 h-5 text-white" />
+              </button>
+              <span className="px-3 py-2 text-white text-sm font-medium">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZoomIn();
+                }}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                aria-label="Zoom in"
+              >
+                <ZoomIn className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Image Container */}
+            <div
+              className="overflow-auto max-w-full max-h-full"
+              onClick={(e) => e.stopPropagation()}
+              onWheel={handleWheel}
+            >
+              <img
+                src={selectedEvidence.media}
+                alt={selectedEvidence.title}
+                className="transition-transform duration-200 ease-out"
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'center',
+                  cursor: zoomLevel > 1 ? 'grab' : 'default',
+                }}
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
