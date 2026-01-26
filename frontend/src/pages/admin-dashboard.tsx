@@ -26,7 +26,7 @@ export function AdminDashboard() {
       const now = new Date();
       const endTime = new Date(eventSettings.endTime);
       const remainingDuration = endTime.getTime() - now.getTime();
-      
+
       updateEventSettings({
         isActive: false,
         endTime: null,
@@ -44,7 +44,7 @@ export function AdminDashboard() {
     const now = new Date();
     const remainingDuration = eventSettings.remainingDuration || 0;
     const endTime = new Date(now.getTime() + remainingDuration);
-    
+
     updateEventSettings({
       isActive: true,
       endTime: endTime.toISOString(),
@@ -131,9 +131,7 @@ export function AdminDashboard() {
             ) : (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ends:</span>
-                <span>
-                  Paused
-                </span>
+                <span>Paused</span>
               </div>
             )}
             <div className="flex justify-between">
@@ -196,36 +194,40 @@ export function AdminDashboard() {
           <h3 className="text-xl mb-4">Evidence Management</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div>
-                <div className="font-medium">
-                  Phase {eventSettings.currentWave + 1}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Next evidence set
-                </div>
-              </div>
-              <button
-                onClick={releaseNextWave}
-                disabled={
-                  eventSettings.currentWave >= eventSettings.maxWaves ||
-                  !eventSettings.isActive
-                }
-                className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
-              >
-                Release
-              </button>
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              <div>
-                Wave 1: Initial crime scene photos & first witness statement
-              </div>
-              <div className="mt-1">
-                Wave 2: Forensic reports & digital messages
-              </div>
-              <div className="mt-1">
-                Wave 3: Final witness statements & call logs
-              </div>
+              {eventSettings.currentWave >= eventSettings.maxWaves ? (
+                <>
+                  <div>
+                    <div className="font-medium">
+                      All Evidence has been released.
+                    </div>
+                  </div>
+                  <button
+                    onClick={releaseNextWave}
+                    disabled={true}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
+                  >
+                    Release
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <div className="font-medium">
+                      Phase {eventSettings.currentWave + 1}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Next evidence set
+                    </div>
+                  </div>
+                  <button
+                    onClick={releaseNextWave}
+                    disabled={!eventSettings.isActive}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
+                  >
+                    Release
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -234,7 +236,7 @@ export function AdminDashboard() {
         <div className="p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl mb-4 flex items-center gap-2">
             <Eye className="w-5 h-5" />
-            Content Visibility
+            Evidence Interface
           </h3>
           <div className="space-y-3">
             {Object.entries(pagesVisible).map(([page, visible]) => (
@@ -269,7 +271,7 @@ export function AdminDashboard() {
         <div className="p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl mb-4 flex items-center gap-2">
             <Users className="w-5 h-5" />
-            User Progress (Mock Data)
+            Suspect Interface
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">

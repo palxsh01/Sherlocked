@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { LandingPage } from './components/landing-page';
+import { LandingPage } from './pages/landing-page';
 import { Navigation } from './components/navigation';
-import { AdminDashboard } from './components/admin-dashboard';
-import { EvidenceRoom } from './components/evidence-room';
-import { SuspectsPage } from './components/suspects-page';
-import { DetectivesNotebook } from './components/detectives-notebook';
+import { AdminDashboard } from './pages/admin-dashboard';
+import { EvidenceRoom } from './pages/evidence-room';
+import { SuspectsPage } from './pages/suspects-page';
+import { DetectivesNotebook } from './pages/detectives-notebook';
 import { Footer } from './components/footer';
 
 function AppContent() {

@@ -90,14 +90,14 @@ export function LandingPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Log In with Google
+              Log In
             </span>
           </button>
         ) : (
           <div className="w-full max-w-md p-8 bg-card border border-border rounded-lg backdrop-blur-sm">
-            <h3 className="text-xl mb-4 text-center">Mock Google Login</h3>
+            <h3 className="text-xl mb-4 text-center">Login</h3>
             <p className="text-sm text-muted-foreground mb-6 text-center">
-              Enter any email and name to simulate login
+              Enter email and name to proceed
             </p>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -127,9 +127,6 @@ export function LandingPage() {
                   placeholder="Your Name"
                   required
                 />
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Tip: Use admin@sherlocked.com for admin access
               </div>
               <button
                 type="submit"

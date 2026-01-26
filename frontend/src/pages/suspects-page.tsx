@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UserCircle, Check, X, Lock, LoaderIcon } from 'lucide-react';
-import api from '../../../lib/axios';
+import api from '../lib/axios';
 
 interface Suspect {
   _id: string;
@@ -36,12 +36,6 @@ export function SuspectsPage() {
   
     fetchSuspects();
   }, [])
-
-  useEffect(() => {
-    if (suspects.length > 0 && !selectedSuspect) {
-      setSelectedSuspect(suspects[0]);
-    }
-  }, [suspects, selectedSuspect]); 
 
   const toggleSuspectStatus = (id: string, status: 'cleared' | 'suspected') => {
     setSuspectStatus((prev) => ({
@@ -134,7 +128,7 @@ export function SuspectsPage() {
 
         {/* Suspect Details */}
         <div className="lg:col-span-2">
-          {selectedSuspect && (
+          {selectedSuspect ? (
             <div className="p-6 bg-card border border-border rounded-lg space-y-6">
               {/* Header */}
               <div className="flex items-start gap-4">
@@ -182,6 +176,13 @@ export function SuspectsPage() {
                     <p className="leading-relaxed">{selectedSuspect.motive}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center p-12 bg-card border border-dashed border-border rounded-lg">
+              <div className="text-center">
+                <UserCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground">Select a suspect to view details</p>
               </div>
             </div>
           )}

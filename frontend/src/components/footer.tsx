@@ -1,4 +1,4 @@
-import { Mail, Twitter, Instagram, Facebook } from 'lucide-react';
+import { PhoneCall, Twitter, Instagram, Facebook } from "lucide-react";
 
 export function Footer() {
   return (
@@ -10,13 +10,19 @@ export function Footer() {
             <h3 className="text-lg mb-4">Contact</h3>
             <div className="space-y-2">
               <a
-                href="mailto:support@sherlocked.event"
+                href="tel:+91 86183 10257"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                <Mail className="w-4 h-4" />
-                support@sherlocked.event
+                <PhoneCall className="w-4 h-4" />
+                +91 86183 10257 - Adit Sundriyal
               </a>
-              <div className="text-sm text-muted-foreground">Organizing Committee: Campus Events Team</div>
+              <a
+                href="tel:+91 96180 90597"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <PhoneCall className="w-4 h-4" />
+                +91 96180 90597 - Sanjana Reegulagedda
+              </a>
             </div>
           </div>
 
@@ -32,7 +38,7 @@ export function Footer() {
                 <Twitter className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/elas.bphc"
                 className="p-2 bg-muted hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
                 aria-label="Instagram"
               >
@@ -52,8 +58,13 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              © 2026 Sherlocked. All rights reserved.
+            <div>
+              <div className="text-sm text-muted-foreground">
+                © 2026 ELAS. All rights reserved.
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Developed by Palash Shivnani.
+              </div>
             </div>
             <div className="text-sm text-muted-foreground italic">
               All characters and events are fictional. Any resemblance to real persons or events is purely coincidental.
