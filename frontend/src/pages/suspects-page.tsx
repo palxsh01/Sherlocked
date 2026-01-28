@@ -1,41 +1,57 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UserCircle, Check, X, Lock, LoaderIcon } from 'lucide-react';
+import { type EventSettings } from "../lib/settingsInterface";
+import { type Suspect } from "../lib/suspectInterface";
 import api from '../lib/axios';
 
-interface Suspect {
-  _id: string;
-  name: string;
-  role: string;
-  age: number;
-  background: string;
-  relationship: string;
-  alibi: string;
-  motive: string;
-}
 
 export function SuspectsPage() {
-  const { eventSettings } = useApp();
   const [suspects, setSuspects] = useState<Suspect[]>([]);
   const [selectedSuspect, setSelectedSuspect] = useState<Suspect | null>(null);
   const [suspectStatus, setSuspectStatus] = useState<Record<string, 'cleared' | 'suspected' | null>>({});
+  const [settings, setSettings] = useState<EventSettings[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [suspectsLoaded, setSuspectsLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get("/settings");
+        console.log("Settings fetched:", res.data);
+        setSettings(res.data);
+      } catch (error) {
+        console.log("Error in fetchSettings:", error);
+      } finally {
+        setSettingsLoaded(true);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const fetchSuspects = async () => {
       try {
         const res = await api.get("/suspects");
-        console.log(res.data);
+        console.log("Suspects fetched:", res.data);
         setSuspects(res.data);
       } catch (error) {
-        console.log("Error in fetchSuspects");
+        console.log("Error in fetchSuspects:", error);
       } finally {
-        setLoading(false);
+        setSuspectsLoaded(true);
       }
     }
   
     fetchSuspects();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    if (settingsLoaded && suspectsLoaded) {
+      setLoading(false);
+    }
+  }, [settingsLoaded, suspectsLoaded]);
 
   const toggleSuspectStatus = (id: string, status: 'cleared' | 'suspected') => {
     setSuspectStatus((prev) => ({
@@ -44,7 +60,15 @@ export function SuspectsPage() {
     }));
   };
 
-  if (!eventSettings.isActive && !eventSettings.startTime) {
+  if (loading || !settings.length) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <LoaderIcon className="animate-spin size-10" />
+      </div>
+    );
+  }
+
+  if (!settings[0].isActive && !settings[0].startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -53,13 +77,9 @@ export function SuspectsPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <LoaderIcon className="animate-spin size-10" />
-      </div>
-    )
-  }
+  const availableSuspects = suspects.filter(
+    (s) => s.phase <= settings[0].currentPhase,
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -68,12 +88,22 @@ export function SuspectsPage() {
         <p className="text-muted-foreground">
           Review detailed information about each person of interest. Track your investigation progress.
         </p>
+        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+          {settings[0].currentPhase === 0 ? (
+            <span className="text-sm">Suspect profiles are yet to be released</span>
+          ) : (
+            <span className="text-sm">
+              Phase {settings[0].currentPhase} is Live
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Suspects List */}
         <div className="lg:col-span-1 space-y-3">
-          {suspects.map((suspect) => (
+          {availableSuspects.map((suspect) => (
             <button
               key={suspect._id}
               onClick={() => setSelectedSuspect(suspect)}
@@ -86,8 +116,15 @@ export function SuspectsPage() {
               <div className="flex items-start gap-3">
                 <UserCircle className="w-10 h-10 text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium mb-1">{suspect.name}</div>
-                  <div className="text-sm text-muted-foreground line-clamp-1">{suspect.role}</div>
+                  <div className="font-medium mb-1">
+                    {suspect.name}
+                  </div>
+                  <div className="text-sm text-muted-foreground line-clamp-1">
+                    {suspect.role}
+                  </div>
+                  <div className="mt-2 text-xs text-primary">
+                      Phase {suspect.phase}
+                  </div>
                 </div>
               </div>
 
@@ -124,6 +161,25 @@ export function SuspectsPage() {
               </div>
             </button>
           ))}
+
+          {/* Locked Suspect Indicators */}
+          {availableSuspects.length === 0 &&
+            Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={`locked-${i}`}
+                className="w-full p-4 rounded-lg border border-dashed border-border bg-muted/50 opacity-50"
+              >
+                <div className="flex items-start gap-3">
+                  <Lock className="w-10 h-10 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="font-medium mb-1">Locked Suspect Profile</div>
+                    <div className="text-sm text-muted-foreground">
+                      More suspect profiles will be released soon
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
         </div>
 
         {/* Suspect Details */}
@@ -141,7 +197,7 @@ export function SuspectsPage() {
                   <div className="flex gap-2 flex-wrap">
                     
                     <div className="inline-block px-3 py-1 rounded-full text-sm bg-muted">
-                      Age {selectedSuspect.age}
+                      Age: {selectedSuspect.age}
                     </div>
                   </div>
                 </div>

@@ -6,39 +6,20 @@ interface User {
   isAdmin: boolean;
 }
 
-interface EventSettings {
-  isActive: boolean;
-  startTime: string | null;
-  endTime: string | null;
-  remainingDuration: number | null; // milliseconds remaining when paused
-  currentWave: number;
-  maxWaves: number;
-}
-
 interface AppContextType {
   user: User | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  eventSettings: EventSettings;
-  updateEventSettings: (settings: Partial<EventSettings>) => void;
   progress: Record<string, boolean>;
   markProgress: (key: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const ADMIN_EMAILS = ['aK9m3XpRj2Lw@sherlocked.com'];
+const ADMIN_EMAILS = ['f33tfinder@sherlocked.com'];
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [eventSettings, setEventSettings] = useState<EventSettings>({
-    isActive: false,
-    startTime: null,
-    endTime: null,
-    remainingDuration: null,
-    currentWave: 0,
-    maxWaves: 3,
-  });
   const [progress, setProgress] = useState<Record<string, boolean>>({});
 
   // Load from localStorage on mount
@@ -48,7 +29,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const savedProgress = localStorage.getItem('sherlocked_progress');
 
     if (savedUser) setUser(JSON.parse(savedUser));
-    if (savedSettings) setEventSettings(JSON.parse(savedSettings));
     if (savedProgress) setProgress(JSON.parse(savedProgress));
   }, []);
 
@@ -64,12 +44,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('sherlocked_user');
   };
 
-  const updateEventSettings = (settings: Partial<EventSettings>) => {
-    const newSettings = { ...eventSettings, ...settings };
-    setEventSettings(newSettings);
-    localStorage.setItem('sherlocked_event_settings', JSON.stringify(newSettings));
-  };
-
   const markProgress = (key: string) => {
     const newProgress = { ...progress, [key]: true };
     setProgress(newProgress);
@@ -82,8 +56,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user,
         login,
         logout,
-        eventSettings,
-        updateEventSettings,
         progress,
         markProgress,
       }}

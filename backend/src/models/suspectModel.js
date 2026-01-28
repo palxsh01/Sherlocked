@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-const suspectSchema = new mongoose.Schema(
-  {
+const suspectSchema = new mongoose.Schema({
+    phase: Number,
     name: String,
     role: String,
     age: Number,

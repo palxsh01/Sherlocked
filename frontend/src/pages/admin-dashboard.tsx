@@ -1,86 +1,251 @@
-import { useState } from "react";
-import { useApp } from "../context/AppContext";
-import { Settings, Play, Pause, Users, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Settings,
+  Play,
+  Pause,
+  Users,
+  Eye,
+  LoaderIcon,
+  RotateCcw,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { type EventSettings } from "../lib/settingsInterface";
+import api from "../lib/axios";
 
 export function AdminDashboard() {
-  const { eventSettings, updateEventSettings } = useApp();
-  const [pagesVisible, setPagesVisible] = useState({
-    evidence: true,
-    suspects: true,
-    notebook: true,
-  });
+  const [settings, setSettings] = useState<EventSettings[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [phaseEv, setPhaseEv] = useState(0);
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("");
+  const [media, setMedia] = useState("");
+  const [description, setDescription] = useState("");
+  const [details, setDetails] = useState("");
+  const [phaseSus, setPhaseSus] = useState(0);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [age, setAge] = useState(0);
+  const [background, setBackground] = useState("");
+  const [relationship, setRelationship] = useState("");
+  const [alibi, setAlibi] = useState("");
+  const [motive, setMotive] = useState("");
 
-  const startEvent = () => {
-    const now = new Date();
-    const endTime = new Date(now.getTime() + 3 * 60 * 60 * 1000); // 3 hours from now
-    updateEventSettings({
-      isActive: true,
-      startTime: now.toISOString(),
-      endTime: endTime.toISOString(),
-      remainingDuration: null,
-    });
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get("/settings");
+      console.log(res.data);
+      setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
+    } catch (error) {
+      console.log("Error in fetchSettings:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const pauseEvent = () => {
-    if (eventSettings.endTime) {
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const startEvent = async () => {
+    setLoading(true);
+    const now = new Date();
+    const end = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+    const startTime = now.toISOString();
+    const endTime = end.toISOString();
+
+    try {
+      await api.put("settings/start", {
+        startTime,
+        endTime,
+      });
+
+      fetchSettings();
+
+      console.log("Successful Start.");
+    } catch (error) {
+      console.log("Error in startEvent:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pauseEvent = async () => {
+    setLoading(true);
+
+    if (settings[0].endTime !== null) {
       const now = new Date();
-      const endTime = new Date(eventSettings.endTime);
-      const remainingDuration = endTime.getTime() - now.getTime();
+      const endTime = new Date(settings[0].endTime);
+      const remaining = endTime.getTime() - now.getTime();
+      const remainingDuration = remaining > 0 ? remaining : 0;
 
-      updateEventSettings({
-        isActive: false,
-        endTime: null,
-        remainingDuration: remainingDuration > 0 ? remainingDuration : 0,
-      });
-    } else {
-      updateEventSettings({
-        isActive: false,
-        endTime: null,
-      });
+      try {
+        await api.put("/settings/pause", {
+          remainingDuration,
+        });
+
+        fetchSettings();
+
+        console.log("Successful Pause.");
+      } catch (error) {
+        console.log("Error in pauseEvent:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const resumeEvent = () => {
+  const resumeEvent = async () => {
     const now = new Date();
-    const remainingDuration = eventSettings.remainingDuration || 0;
-    const endTime = new Date(now.getTime() + remainingDuration);
+    const remainingDuration = settings[0].remainingDuration || 0;
+    const end = new Date(now.getTime() + remainingDuration);
+    const endTime = end.toISOString();
 
-    updateEventSettings({
-      isActive: true,
-      endTime: endTime.toISOString(),
-      remainingDuration: null,
-    });
-  };
-
-  const releaseNextWave = () => {
-    if (eventSettings.currentWave < eventSettings.maxWaves) {
-      updateEventSettings({
-        currentWave: eventSettings.currentWave + 1,
+    try {
+      await api.put("/settings/resume", {
+        endTime,
       });
+
+      fetchSettings();
+
+      console.log("Successful Resume.");
+    } catch (error) {
+      console.log("Error in resumeEvent:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const resetEvent = () => {
+  const releaseNextWave = async () => {
+    setLoading(true);
+
+    if (settings[0].currentPhase < settings[0].maxPhases) {
+      const currentPhase = settings[0].currentPhase + 1;
+
+      console.log(currentPhase);
+
+      try {
+        await api.put("/settings/phase", {
+          currentPhase,
+        });
+
+        fetchSettings();
+
+        console.log("Next Phase Successful.");
+      } catch (error) {
+        console.log("Error in releaseNextPhase:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const resetEvent = async () => {
     if (
       confirm(
-        "Are you sure you want to reset the entire event? This will clear all progress."
+        "Are you sure you want to reset the entire event? This will clear all progress.",
       )
     ) {
-      updateEventSettings({
-        isActive: false,
-        startTime: null,
-        endTime: null,
-        remainingDuration: null,
-        currentWave: 0,
-      });
+      try {
+        setLoading(true);
+
+        await api.put("settings/reset");
+        console.log("Successful Reset.");
+      } catch (error) {
+        console.log("Error in resetEvent:", error);
+      } finally {
+        setLoading(false);
+      }
+
+      fetchSettings();
+
       localStorage.removeItem("sherlocked_progress");
-      window.location.reload();
     }
   };
 
-  const togglePageVisibility = (page: keyof typeof pagesVisible) => {
-    setPagesVisible((prev) => ({ ...prev, [page]: !prev[page] }));
+  const newEvidence = async () => {
+    setSubmitting(true);
+
+    if (!title.trim()) {
+      toast.error("All fields are required.");
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      await api.post("/evidence/", {
+        phase: phaseEv,
+        title,
+        type,
+        media,
+        description,
+        details,
+      });
+
+      console.log("Evidence created successfully.");
+      toast.success("Evidence created successfully.");
+      // Reset form
+      setPhaseEv(0);
+      setTitle("");
+      setType("");
+      setMedia("");
+      setDescription("");
+      setDetails("");
+    } catch (error) {
+      console.log("Error in newEvidence:", error);
+      toast.error("Failed to create evidence.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const newSuspect = async () => {
+    setSubmitting(true);
+
+    if (!name.trim()) {
+      toast.error("All fields are required.");
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      await api.post("/suspects/", {
+        phase: phaseSus,
+        name,
+        role,
+        age,
+        background,
+        relationship,
+        alibi,
+        motive,
+      });
+
+      console.log("Suspect created successfully.");
+      toast.success("Suspect created successfully.");
+      // Reset form
+      setPhaseSus(0);
+      setName("");
+      setRole("");
+      setAge(0);
+      setBackground("");
+      setRelationship("");
+      setAlibi("");
+      setMotive("");
+    } catch (error) {
+      console.log("Error in newSuspect:", error);
+      toast.error("Failed to create suspect.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading || !settings.length) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <LoaderIcon className="animate-spin size-10" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -96,7 +261,7 @@ export function AdminDashboard() {
             Event Status
             <div
               className={`size-3 rounded-full ${
-                eventSettings.isActive
+                settings[0].isActive
                   ? "bg-green-500 animate-pulse"
                   : "bg-red-500"
               }`}
@@ -107,43 +272,46 @@ export function AdminDashboard() {
               <span className="text-muted-foreground">Status:</span>
               <span
                 className={
-                  eventSettings.isActive ? "text-green-500" : "text-red-500"
+                  settings[0].isActive ? "text-green-500" : "text-red-500"
                 }
               >
-                {eventSettings.isActive ? "Active" : "Inactive"}
+                {settings[0].isActive ? "Active" : "Inactive"}
               </span>
             </div>
-            {eventSettings.startTime && (
+            {settings[0].startTime && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Started:</span>
                 <span>
-                  {new Date(eventSettings.startTime).toLocaleTimeString()}
+                  {new Date(settings[0].startTime).toLocaleTimeString()}
                 </span>
               </div>
             )}
-            {eventSettings.endTime ? (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ends:</span>
-                <span>
-                  {new Date(eventSettings.endTime).toLocaleTimeString()}
-                </span>
-              </div>
-            ) : (
+            {settings[0].endTime && settings[0].startTime && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ends:</span>
+                  <span>
+                    {new Date(settings[0].endTime).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Current Phase:</span>
+                  <span>
+                    {settings[0].currentPhase} / {settings[0].maxPhases}
+                  </span>
+                </div>
+              </>
+            )}
+            {!settings[0].endTime && settings[0].startTime && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ends:</span>
                 <span>Paused</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Current Phase:</span>
-              <span>
-                {eventSettings.currentWave} / {eventSettings.maxWaves}
-              </span>
-            </div>
           </div>
 
           <div className="mt-6 space-y-3">
-            {!eventSettings.startTime && (
+            {!settings[0].startTime && (
               <button
                 onClick={startEvent}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
@@ -152,7 +320,7 @@ export function AdminDashboard() {
                 Start Event
               </button>
             )}
-            {!eventSettings.isActive && eventSettings.startTime && (
+            {!settings[0].isActive && settings[0].startTime && (
               <>
                 <button
                   onClick={resumeEvent}
@@ -163,13 +331,14 @@ export function AdminDashboard() {
                 </button>
                 <button
                   onClick={resetEvent}
-                  className="w-full px-4 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors"
                 >
+                  <RotateCcw className="size-4" />
                   Reset Event
                 </button>
               </>
             )}
-            {eventSettings.isActive && (
+            {settings[0].isActive && (
               <>
                 <button
                   onClick={pauseEvent}
@@ -180,8 +349,9 @@ export function AdminDashboard() {
                 </button>
                 <button
                   onClick={resetEvent}
-                  className="w-full px-4 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg transition-colors"
                 >
+                  <RotateCcw className="size-4" />
                   Reset Event
                 </button>
               </>
@@ -194,7 +364,7 @@ export function AdminDashboard() {
           <h3 className="text-xl mb-4">Evidence Management</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              {eventSettings.currentWave >= eventSettings.maxWaves ? (
+              {settings[0].currentPhase >= settings[0].maxPhases ? (
                 <>
                   <div>
                     <div className="font-medium">
@@ -213,7 +383,7 @@ export function AdminDashboard() {
                 <>
                   <div>
                     <div className="font-medium">
-                      Phase {eventSettings.currentWave + 1}
+                      Phase {settings[0].currentPhase + 1}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Next evidence set
@@ -221,7 +391,7 @@ export function AdminDashboard() {
                   </div>
                   <button
                     onClick={releaseNextWave}
-                    disabled={!eventSettings.isActive}
+                    disabled={!settings[0].isActive}
                     className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
                   >
                     Release
@@ -232,75 +402,206 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Page Visibility Card */}
+        {/* New Evidence Card */}
         <div className="p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl mb-4 flex items-center gap-2">
             <Eye className="w-5 h-5" />
-            Evidence Interface
+            New Evidence
           </h3>
-          <div className="space-y-3">
-            {Object.entries(pagesVisible).map(([page, visible]) => (
-              <div
-                key={page}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              newEvidence();
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium mb-2">Phase</label>
+              <select
+                value={phaseEv}
+                onChange={(e) => setPhaseEv(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
               >
-                <span className="capitalize">{page}</span>
-                <button
-                  onClick={() =>
-                    togglePageVisibility(page as keyof typeof pagesVisible)
-                  }
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    visible
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-red-600 hover:bg-red-700 text-white"
-                  }`}
-                >
-                  {visible ? (
-                    <Eye className="w-4 h-4" />
-                  ) : (
-                    <EyeOff className="w-4 h-4" />
-                  )}
-                  {visible ? "Visible" : "Hidden"}
-                </button>
-              </div>
-            ))}
-          </div>
+                <option value={0}>Select phase</option>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Type</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              >
+                <option value="">Select type</option>
+                <option value="photo">Photo</option>
+                <option value="document">Document</option>
+                <option value="digital">Digital</option>
+                <option value="forensic">Forensic</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Media URL
+              </label>
+              <input
+                type="text"
+                value={media}
+                onChange={(e) => setMedia(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Details</label>
+              <textarea
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
+            >
+              Add Evidence
+            </button>
+          </form>
         </div>
 
-        {/* Mock User Progress Card */}
+        {/* New Suspect Interface */}
         <div className="p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl mb-4 flex items-center gap-2">
             <Users className="w-5 h-5" />
             Suspect Interface
           </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div>
-                <div className="font-medium">Total Participants</div>
-                <div className="text-2xl text-primary">47</div>
-              </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              newSuspect();
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium mb-2">Phase</label>
+              <select
+                value={phaseSus}
+                onChange={(e) => setPhaseSus(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              >
+                <option value={0}>Select phase</option>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Viewed all evidence:
-                </span>
-                <span>32 (68%)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Checked all suspects:
-                </span>
-                <span>28 (59%)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Active investigators:
-                </span>
-                <span className="text-green-500">19</span>
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              />
             </div>
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Role</label>
+              <input
+                type="text"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Age</label>
+              <input
+                type="number"
+                value={age}
+                onChange={(e) => setAge(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Background</label>
+              <textarea
+                value={background}
+                onChange={(e) => setBackground(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Relationship</label>
+              <textarea
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Alibi</label>
+              <textarea
+                value={alibi}
+                onChange={(e) => setAlibi(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Motive</label>
+              <textarea
+                value={motive}
+                onChange={(e) => setMotive(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
+                rows={2}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
+            >
+              Add Suspect
+            </button>
+          </form>
         </div>
       </div>
 

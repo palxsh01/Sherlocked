@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
+import { type EventSettings } from "../lib/settingsInterface";
+import { type Evidence } from "../lib/evidenceInterface";
 import api from "../lib/axios";
 import {
   FileText,
@@ -13,23 +15,30 @@ import {
   X,
 } from "lucide-react";
 
-interface Evidence {
-  _id: string;
-  phase: number;
-  title: string;
-  type: "photo" | "document" | "digital" | "forensic";
-  media: string;
-  description: string;
-  details: string;
-}
-
 export function EvidenceRoom() {
-  const { eventSettings } = useApp();
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [settings, setSettings] = useState<EventSettings[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [evidenceLoaded, setEvidenceLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get("/settings");
+        console.log(res.data);
+        setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
+      } catch (error) {
+        console.log("Error in fetchSettings:", error);
+      } finally {
+        setSettingsLoaded(true);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const fetchEvidence = async () => {
@@ -40,7 +49,7 @@ export function EvidenceRoom() {
       } catch (error) {
         console.log("Error in fetchEvidence, ", error);
       } finally {
-        setLoading(false);
+        setEvidenceLoaded(true);
       }
     };
 
@@ -48,13 +57,28 @@ export function EvidenceRoom() {
   }, []);
 
   useEffect(() => {
+    if (settingsLoaded && evidenceLoaded) {
+      setLoading(false);
+    }
+  }, [settingsLoaded, evidenceLoaded]);
+  
+  
+  useEffect(() => {
     if (!isImageModalOpen) {
       setZoomLevel(1);
     }
   }, [isImageModalOpen]);
+  
+  if (loading || !settings.length) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <LoaderIcon className="animate-spin size-10" />
+      </div>
+    );
+  }
 
   const availableEvidence = evidence.filter(
-    (e) => e.phase <= eventSettings.currentWave
+    (e) => e.phase <= settings[0].currentPhase,
   );
 
   const getIcon = (type: Evidence["type"]) => {
@@ -67,6 +91,8 @@ export function EvidenceRoom() {
         return Phone;
       case "forensic":
         return AlertCircle;
+      default:
+        return FileText;
     }
   };
 
@@ -87,19 +113,12 @@ export function EvidenceRoom() {
     }
   };
 
-  if (!eventSettings.isActive && !eventSettings.startTime) {
+
+  if (!settings[0].isActive && !settings[0].startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-xl mb-2">The event is not live right now.</h3>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <LoaderIcon className="animate-spin size-10" />
       </div>
     );
   }
@@ -114,11 +133,11 @@ export function EvidenceRoom() {
         </p>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          {eventSettings.currentWave === 0 ? (
+          {settings[0].currentPhase === 0 ? (
             <span className="text-sm">Evidence is yet to be released</span>
           ) : (
             <span className="text-sm">
-              Phase {eventSettings.currentWave} is Live
+              Phase {settings[0].currentPhase} is Live
             </span>
           )}
         </div>
@@ -159,24 +178,22 @@ export function EvidenceRoom() {
 
           {/* Locked Evidence Indicators */}
           {availableEvidence.length === 0 &&
-            Array.from({ length: 3 }).map(
-              (_, i) => (
-                <div
-                  key={`locked-${i}`}
-                  className="w-full p-4 rounded-lg border border-dashed border-border bg-muted/50 opacity-50"
-                >
-                  <div className="flex items-start gap-3">
-                    <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <div className="font-medium mb-1">Locked Evidence</div>
-                      <div className="text-sm text-muted-foreground">
-                        More evidence will be released soon
-                      </div>
+            Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={`locked-${i}`}
+                className="w-full p-4 rounded-lg border border-dashed border-border bg-muted/50 opacity-50"
+              >
+                <div className="flex items-start gap-3">
+                  <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div>
+                    <div className="font-medium mb-1">Locked Evidence</div>
+                    <div className="text-sm text-muted-foreground">
+                      More evidence will be released soon
                     </div>
                   </div>
                 </div>
-              )
-            )}
+              </div>
+            ))}
         </div>
 
         {/* Evidence Details */}
@@ -202,21 +219,21 @@ export function EvidenceRoom() {
               <div className="space-y-4">
                 {selectedEvidence.media && (
                   <div>
-                  <div className="text-sm text-muted-foreground mb-2">
-                    Evidence Media:
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Evidence Media:
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <img
+                        src={selectedEvidence.media}
+                        alt={selectedEvidence.title}
+                        onClick={() => setIsImageModalOpen(true)}
+                        className="max-h-96 w-full object-contain rounded-md"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <img
-                      src={selectedEvidence.media}
-                      alt={selectedEvidence.title}
-                      onClick={() => setIsImageModalOpen(true)}
-                      className="max-h-96 w-full object-contain rounded-md"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
                 )}
-              
+
                 <div>
                   <div className="text-sm text-muted-foreground mb-2">
                     Evidence Details:

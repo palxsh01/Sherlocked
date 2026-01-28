@@ -27,9 +27,10 @@ export async function getSuspect(req, res) {
 
 export async function newSuspect(req, res) {
   try {
-    const { name, role, age, background, relationship, alibi, motive } = req.body;
+    const { phase, name, role, age, background, relationship, alibi, motive } = req.body;
     
     const newSuspect = new Suspect({
+      phase: phase,
       name: name,
       role: role,
       age: age,
@@ -50,9 +51,10 @@ export async function newSuspect(req, res) {
 
 export async function updateSuspect(req, res) {
   try {
-    const { name, role, age, background, relationship, alibi, motive } = req.body;
+    const { phase, name, role, age, background, relationship, alibi, motive } = req.body;
     
     const updatedSuspect = await Suspect.findByIdAndUpdate(req.params.id, {
+      phase,
       name,
       role,
       age,

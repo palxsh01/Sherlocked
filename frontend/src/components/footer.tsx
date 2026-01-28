@@ -1,4 +1,4 @@
-import { PhoneCall, Twitter, Instagram, Facebook } from "lucide-react";
+import { PhoneCall, Instagram} from "lucide-react";
 
 export function Footer() {
   return (
@@ -21,7 +21,7 @@ export function Footer() {
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <PhoneCall className="w-4 h-4" />
-                +91 96180 90597 - Sanjana Reegulagedda
+                +91 96180 90597 - Sanjana Regulagedda
               </a>
             </div>
           </div>

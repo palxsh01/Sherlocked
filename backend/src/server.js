@@ -2,6 +2,7 @@ import express from "express";
 import rateLimiter from "./middleware/rateLimiter.js";
 import suspectRoutes from "./routes/suspectRoutes.js";
 import evidenceRoutes from "./routes/evidenceRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
 import connectDB from "./config/database.js";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -13,10 +14,10 @@ const app = express();
 const PORT = process.env.PORT;
 const __dirname = path.resolve();
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV === "development") {
   app.use(
     cors({
-      origin: "http://localhost:5173", //Frontend origin
+      origin: "http://localhost:5173", //Frontend Origin
     })
   );
 }
@@ -26,6 +27,7 @@ app.use(rateLimiter);
 
 app.use("/api/suspects/", suspectRoutes);
 app.use("/api/evidence/", evidenceRoutes);
+app.use("/api/settings/", settingsRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

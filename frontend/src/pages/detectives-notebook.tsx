@@ -1,6 +1,8 @@
 import { BookOpen, Lightbulb, Target, AlertTriangle, CheckCircle, Lock, LoaderIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useState } from 'react';
+import { type EventSettings } from "../lib/settingsInterface";
+import { useState, useEffect } from 'react';
+import api from '../lib/axios';
 
 const tips = [
   {
@@ -70,10 +72,34 @@ const tips = [
 ];
 
 export function DetectivesNotebook() {
+  const [settings, setSettings] = useState<EventSettings[]>([]);
   const [loading, setLoading] = useState(true);
-  const { eventSettings } = useApp();
 
-  if (!eventSettings.isActive && !eventSettings.startTime) {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get("/settings");
+        console.log(res.data);
+        setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
+      } catch (error) {
+        console.log("Error in fetchSettings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, []);
+
+  if (loading || !settings.length) {
+    return (
+      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+        <LoaderIcon className="animate-spin size-10" />
+      </div>
+    );
+  }
+
+  if (!settings[0].isActive && !settings[0].startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
