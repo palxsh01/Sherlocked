@@ -4,7 +4,7 @@ const evidenceSchema = mongoose.Schema({
   phase: Number,
   title: String,
   type: String,
-  media: String,
+  media: [String],
   description: String,
   details: String
 });
