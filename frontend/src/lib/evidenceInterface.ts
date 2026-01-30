@@ -3,7 +3,7 @@ export interface Evidence {
   phase: number;
   title: string;
   type: "photo" | "document" | "digital" | "forensic";
-  media: string;
+  media: string[];
   description: string;
   details: string;
 }
