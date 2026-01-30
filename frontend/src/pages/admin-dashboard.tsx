@@ -9,43 +9,25 @@ import {
   RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { type EventSettings } from "../lib/settingsInterface";
+
+import { useApp } from "../context/AppContext";
+import { NewEvidenceForm } from "../components/newEvidenceForm";
+import { NewSuspectForm } from "../components/newSuspectForm.tsx";
 import api from "../lib/axios";
 
 export function AdminDashboard() {
-  const [settings, setSettings] = useState<EventSettings[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [phaseEv, setPhaseEv] = useState(0);
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("");
-  const [media, setMedia] = useState("");
-  const [description, setDescription] = useState("");
-  const [details, setDetails] = useState("");
-  const [phaseSus, setPhaseSus] = useState(0);
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [age, setAge] = useState(0);
-  const [background, setBackground] = useState("");
-  const [relationship, setRelationship] = useState("");
-  const [alibi, setAlibi] = useState("");
-  const [motive, setMotive] = useState("");
+  const { settings, settingsLoading, refreshSettings } = useApp();
 
   const fetchSettings = async () => {
-    try {
-      const res = await api.get("/settings");
-      console.log(res.data);
-      setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
-    } catch (error) {
-      console.log("Error in fetchSettings:", error);
-    } finally {
-      setLoading(false);
-    }
+    await refreshSettings();
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (!settingsLoading) {
+      setLoading(false);
+    }
+  }, [settingsLoading]);
 
   const startEvent = async () => {
     setLoading(true);
@@ -61,8 +43,6 @@ export function AdminDashboard() {
       });
 
       fetchSettings();
-
-      console.log("Successful Start.");
     } catch (error) {
       console.log("Error in startEvent:", error);
     } finally {
@@ -73,9 +53,9 @@ export function AdminDashboard() {
   const pauseEvent = async () => {
     setLoading(true);
 
-    if (settings[0].endTime !== null) {
+    if (settings && settings.endTime !== null) {
       const now = new Date();
-      const endTime = new Date(settings[0].endTime);
+      const endTime = new Date(settings.endTime);
       const remaining = endTime.getTime() - now.getTime();
       const remainingDuration = remaining > 0 ? remaining : 0;
 
@@ -85,8 +65,6 @@ export function AdminDashboard() {
         });
 
         fetchSettings();
-
-        console.log("Successful Pause.");
       } catch (error) {
         console.log("Error in pauseEvent:", error);
       } finally {
@@ -97,7 +75,7 @@ export function AdminDashboard() {
 
   const resumeEvent = async () => {
     const now = new Date();
-    const remainingDuration = settings[0].remainingDuration || 0;
+    const remainingDuration = settings?.remainingDuration || 0;
     const end = new Date(now.getTime() + remainingDuration);
     const endTime = end.toISOString();
 
@@ -107,36 +85,10 @@ export function AdminDashboard() {
       });
 
       fetchSettings();
-
-      console.log("Successful Resume.");
     } catch (error) {
       console.log("Error in resumeEvent:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const releaseNextWave = async () => {
-    setLoading(true);
-
-    if (settings[0].currentPhase < settings[0].maxPhases) {
-      const currentPhase = settings[0].currentPhase + 1;
-
-      console.log(currentPhase);
-
-      try {
-        await api.put("/settings/phase", {
-          currentPhase,
-        });
-
-        fetchSettings();
-
-        console.log("Next Phase Successful.");
-      } catch (error) {
-        console.log("Error in releaseNextPhase:", error);
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -150,7 +102,6 @@ export function AdminDashboard() {
         setLoading(true);
 
         await api.put("settings/reset");
-        console.log("Successful Reset.");
       } catch (error) {
         console.log("Error in resetEvent:", error);
       } finally {
@@ -163,83 +114,29 @@ export function AdminDashboard() {
     }
   };
 
-  const newEvidence = async () => {
-    setSubmitting(true);
+  const releaseNextWave = async () => {
+    setLoading(true);
 
-    if (!title.trim()) {
-      toast.error("All fields are required.");
-      setSubmitting(false);
-      return;
-    }
+    if (settings && settings.currentPhase < settings.maxPhases) {
+      const currentPhase = settings.currentPhase + 1;
 
-    try {
-      await api.post("/evidence/", {
-        phase: phaseEv,
-        title,
-        type,
-        media,
-        description,
-        details,
-      });
+      console.log(currentPhase);
 
-      console.log("Evidence created successfully.");
-      toast.success("Evidence created successfully.");
-      // Reset form
-      setPhaseEv(0);
-      setTitle("");
-      setType("");
-      setMedia("");
-      setDescription("");
-      setDetails("");
-    } catch (error) {
-      console.log("Error in newEvidence:", error);
-      toast.error("Failed to create evidence.");
-    } finally {
-      setSubmitting(false);
+      try {
+        await api.put("/settings/phase", {
+          currentPhase,
+        });
+
+        fetchSettings();
+      } catch (error) {
+        console.log("Error in releaseNextPhase:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const newSuspect = async () => {
-    setSubmitting(true);
-
-    if (!name.trim()) {
-      toast.error("All fields are required.");
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      await api.post("/suspects/", {
-        phase: phaseSus,
-        name,
-        role,
-        age,
-        background,
-        relationship,
-        alibi,
-        motive,
-      });
-
-      console.log("Suspect created successfully.");
-      toast.success("Suspect created successfully.");
-      // Reset form
-      setPhaseSus(0);
-      setName("");
-      setRole("");
-      setAge(0);
-      setBackground("");
-      setRelationship("");
-      setAlibi("");
-      setMotive("");
-    } catch (error) {
-      console.log("Error in newSuspect:", error);
-      toast.error("Failed to create suspect.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading || !settings.length) {
+  if (loading || !settings) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
@@ -261,7 +158,7 @@ export function AdminDashboard() {
             Event Status
             <div
               className={`size-3 rounded-full ${
-                settings[0].isActive
+                settings.isActive
                   ? "bg-green-500 animate-pulse"
                   : "bg-red-500"
               }`}
@@ -272,37 +169,37 @@ export function AdminDashboard() {
               <span className="text-muted-foreground">Status:</span>
               <span
                 className={
-                  settings[0].isActive ? "text-green-500" : "text-red-500"
+                  settings.isActive ? "text-green-500" : "text-red-500"
                 }
               >
-                {settings[0].isActive ? "Active" : "Inactive"}
+                {settings.isActive ? "Active" : "Inactive"}
               </span>
             </div>
-            {settings[0].startTime && (
+            {settings.startTime && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Started:</span>
                 <span>
-                  {new Date(settings[0].startTime).toLocaleTimeString()}
+                  {new Date(settings.startTime).toLocaleTimeString()}
                 </span>
               </div>
             )}
-            {settings[0].endTime && settings[0].startTime && (
+            {settings.endTime && settings.startTime && (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ends:</span>
                   <span>
-                    {new Date(settings[0].endTime).toLocaleTimeString()}
+                    {new Date(settings.endTime).toLocaleTimeString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Current Phase:</span>
                   <span>
-                    {settings[0].currentPhase} / {settings[0].maxPhases}
+                    {settings.currentPhase} / {settings.maxPhases}
                   </span>
                 </div>
               </>
             )}
-            {!settings[0].endTime && settings[0].startTime && (
+            {!settings.endTime && settings.startTime && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ends:</span>
                 <span>Paused</span>
@@ -311,7 +208,7 @@ export function AdminDashboard() {
           </div>
 
           <div className="mt-6 space-y-3">
-            {!settings[0].startTime && (
+            {!settings.startTime && (
               <button
                 onClick={startEvent}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
@@ -320,7 +217,7 @@ export function AdminDashboard() {
                 Start Event
               </button>
             )}
-            {!settings[0].isActive && settings[0].startTime && (
+            {!settings.isActive && settings.startTime && (
               <>
                 <button
                   onClick={resumeEvent}
@@ -338,7 +235,7 @@ export function AdminDashboard() {
                 </button>
               </>
             )}
-            {settings[0].isActive && (
+            {settings.isActive && (
               <>
                 <button
                   onClick={pauseEvent}
@@ -364,7 +261,7 @@ export function AdminDashboard() {
           <h3 className="text-xl mb-4">Evidence Management</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              {settings[0].currentPhase >= settings[0].maxPhases ? (
+              {settings.currentPhase >= settings.maxPhases ? (
                 <>
                   <div>
                     <div className="font-medium">
@@ -383,7 +280,7 @@ export function AdminDashboard() {
                 <>
                   <div>
                     <div className="font-medium">
-                      Phase {settings[0].currentPhase + 1}
+                      Phase {settings.currentPhase + 1}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Next evidence set
@@ -391,7 +288,7 @@ export function AdminDashboard() {
                   </div>
                   <button
                     onClick={releaseNextWave}
-                    disabled={!settings[0].isActive}
+                    disabled={!settings.isActive}
                     className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
                   >
                     Release
@@ -403,206 +300,10 @@ export function AdminDashboard() {
         </div>
 
         {/* New Evidence Card */}
-        <div className="p-6 bg-card border border-border rounded-lg">
-          <h3 className="text-xl mb-4 flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            New Evidence
-          </h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              newEvidence();
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-sm font-medium mb-2">Phase</label>
-              <select
-                value={phaseEv}
-                onChange={(e) => setPhaseEv(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              >
-                <option value={0}>Select phase</option>
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              >
-                <option value="">Select type</option>
-                <option value="photo">Photo</option>
-                <option value="document">Document</option>
-                <option value="digital">Digital</option>
-                <option value="forensic">Forensic</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Media URL
-              </label>
-              <input
-                type="text"
-                value={media}
-                onChange={(e) => setMedia(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Details</label>
-              <textarea
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
-            >
-              Add Evidence
-            </button>
-          </form>
-        </div>
+        <NewEvidenceForm />
 
-        {/* New Suspect Interface */}
-        <div className="p-6 bg-card border border-border rounded-lg">
-          <h3 className="text-xl mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Suspect Interface
-          </h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              newSuspect();
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-sm font-medium mb-2">Phase</label>
-              <select
-                value={phaseSus}
-                onChange={(e) => setPhaseSus(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              >
-                <option value={0}>Select phase</option>
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Role</label>
-              <input
-                type="text"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Age</label>
-              <input
-                type="number"
-                value={age}
-                onChange={(e) => setAge(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Background</label>
-              <textarea
-                value={background}
-                onChange={(e) => setBackground(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Relationship</label>
-              <textarea
-                value={relationship}
-                onChange={(e) => setRelationship(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Alibi</label>
-              <textarea
-                value={alibi}
-                onChange={(e) => setAlibi(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Motive</label>
-              <textarea
-                value={motive}
-                onChange={(e) => setMotive(e.target.value)}
-                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground"
-                rows={2}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-lg transition-colors"
-            >
-              Add Suspect
-            </button>
-          </form>
-        </div>
+        {/* New Suspect Card */}
+        <NewSuspectForm />
       </div>
 
       {/* Info Banner */}

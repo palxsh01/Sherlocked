@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
-import { type EventSettings } from "../lib/settingsInterface";
 import { type Evidence } from "../lib/evidenceInterface";
 import api from "../lib/axios";
 import {
@@ -19,32 +18,16 @@ export function EvidenceRoom() {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [settings, setSettings] = useState<EventSettings[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [evidenceLoaded, setEvidenceLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await api.get("/settings");
-        console.log(res.data);
-        setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
-      } catch (error) {
-        console.log("Error in fetchSettings:", error);
-      } finally {
-        setSettingsLoaded(true);
-      }
-    };
-    fetchSettings();
-  }, []);
+  const { settings, settingsLoading } = useApp();
 
   useEffect(() => {
     const fetchEvidence = async () => {
       try {
         const res = await api.get("/evidence");
-        console.log(res.data);
         setEvidence(res.data);
       } catch (error) {
         console.log("Error in fetchEvidence, ", error);
@@ -57,19 +40,20 @@ export function EvidenceRoom() {
   }, []);
 
   useEffect(() => {
-    if (settingsLoaded && evidenceLoaded) {
+    if (settingsLoading === false && evidenceLoaded) {
       setLoading(false);
     }
-  }, [settingsLoaded, evidenceLoaded]);
+  }, [settingsLoading, evidenceLoaded]);
   
   
   useEffect(() => {
     if (!isImageModalOpen) {
       setZoomLevel(1);
+      setSelectedMediaUrl(null);
     }
   }, [isImageModalOpen]);
   
-  if (loading || !settings.length) {
+  if (loading || !settings) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
@@ -78,7 +62,7 @@ export function EvidenceRoom() {
   }
 
   const availableEvidence = evidence.filter(
-    (e) => e.phase <= settings[0].currentPhase,
+    (e) => e.phase <= settings.currentPhase,
   );
 
   const getIcon = (type: Evidence["type"]) => {
@@ -114,7 +98,7 @@ export function EvidenceRoom() {
   };
 
 
-  if (!settings[0].isActive && !settings[0].startTime) {
+  if (!settings.isActive && !settings.startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -133,11 +117,11 @@ export function EvidenceRoom() {
         </p>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          {settings[0].currentPhase === 0 ? (
+          {settings.currentPhase === 0 ? (
             <span className="text-sm">Evidence is yet to be released</span>
           ) : (
             <span className="text-sm">
-              Phase {settings[0].currentPhase} is Live
+              Phase {settings.currentPhase} is Live
             </span>
           )}
         </div>
@@ -217,20 +201,25 @@ export function EvidenceRoom() {
 
               <div className="h-px bg-border my-6"></div>
               <div className="space-y-4">
-                {selectedEvidence.media && (
+                {selectedEvidence.media && selectedEvidence.media.length > 0 && (
                   <div>
                     <div className="text-sm text-muted-foreground mb-2">
                       Evidence Media:
                     </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <img
-                        src={selectedEvidence.media}
-                        alt={selectedEvidence.title}
-                        onClick={() => setIsImageModalOpen(true)}
-                        className="max-h-96 w-full object-contain rounded-md"
-                        loading="lazy"
-                      />
-                    </div>
+                    {selectedEvidence.media.map((media, index) => (
+                      <div key={index} className="p-4 bg-muted/50 rounded-lg">
+                        <img
+                          src={media}
+                          alt={selectedEvidence.title}
+                          onClick={() => {
+                            setSelectedMediaUrl(media);
+                            setIsImageModalOpen(true);
+                          }}
+                          className="max-h-96 w-full object-contain rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -268,7 +257,7 @@ export function EvidenceRoom() {
         </div>
       </div>
 
-      {isImageModalOpen && selectedEvidence?.media && (
+      {isImageModalOpen && selectedMediaUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setIsImageModalOpen(false)}
@@ -317,8 +306,8 @@ export function EvidenceRoom() {
               onWheel={handleWheel}
             >
               <img
-                src={selectedEvidence.media}
-                alt={selectedEvidence.title}
+                src={selectedMediaUrl}
+                alt={selectedEvidence?.title || "Evidence"}
                 className="transition-transform duration-200 ease-out"
                 style={{
                   transform: `scale(${zoomLevel})`,

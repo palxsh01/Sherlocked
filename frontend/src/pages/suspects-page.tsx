@@ -1,41 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UserCircle, Check, X, Lock, LoaderIcon } from 'lucide-react';
-import { type EventSettings } from "../lib/settingsInterface";
 import { type Suspect } from "../lib/suspectInterface";
 import api from '../lib/axios';
-
 
 export function SuspectsPage() {
   const [suspects, setSuspects] = useState<Suspect[]>([]);
   const [selectedSuspect, setSelectedSuspect] = useState<Suspect | null>(null);
   const [suspectStatus, setSuspectStatus] = useState<Record<string, 'cleared' | 'suspected' | null>>({});
-  const [settings, setSettings] = useState<EventSettings[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [suspectsLoaded, setSuspectsLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await api.get("/settings");
-        console.log("Settings fetched:", res.data);
-        setSettings(res.data);
-      } catch (error) {
-        console.log("Error in fetchSettings:", error);
-      } finally {
-        setSettingsLoaded(true);
-      }
-    };
-
-    fetchSettings();
-  }, []);
+  const { settings, settingsLoading } = useApp();
 
   useEffect(() => {
     const fetchSuspects = async () => {
       try {
         const res = await api.get("/suspects");
-        console.log("Suspects fetched:", res.data);
         setSuspects(res.data);
       } catch (error) {
         console.log("Error in fetchSuspects:", error);
@@ -48,10 +28,10 @@ export function SuspectsPage() {
   }, []);
 
   useEffect(() => {
-    if (settingsLoaded && suspectsLoaded) {
+    if (settingsLoading === false && suspectsLoaded) {
       setLoading(false);
     }
-  }, [settingsLoaded, suspectsLoaded]);
+  }, [settingsLoading, suspectsLoaded]);
 
   const toggleSuspectStatus = (id: string, status: 'cleared' | 'suspected') => {
     setSuspectStatus((prev) => ({
@@ -60,7 +40,7 @@ export function SuspectsPage() {
     }));
   };
 
-  if (loading || !settings.length) {
+  if (loading || !settings) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
@@ -68,7 +48,7 @@ export function SuspectsPage() {
     );
   }
 
-  if (!settings[0].isActive && !settings[0].startTime) {
+  if (!settings.isActive && !settings.startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -78,7 +58,7 @@ export function SuspectsPage() {
   }
 
   const availableSuspects = suspects.filter(
-    (s) => s.phase <= settings[0].currentPhase,
+    (s) => s.phase <= settings.currentPhase,
   );
 
   return (
@@ -90,11 +70,11 @@ export function SuspectsPage() {
         </p>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          {settings[0].currentPhase === 0 ? (
+          {settings.currentPhase === 0 ? (
             <span className="text-sm">Suspect profiles are yet to be released</span>
           ) : (
             <span className="text-sm">
-              Phase {settings[0].currentPhase} is Live
+              Phase {settings.currentPhase} is Live
             </span>
           )}
         </div>

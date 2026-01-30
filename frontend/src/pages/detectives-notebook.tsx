@@ -1,8 +1,6 @@
 import { BookOpen, Lightbulb, Target, AlertTriangle, CheckCircle, Lock, LoaderIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { type EventSettings } from "../lib/settingsInterface";
-import { useState, useEffect } from 'react';
-import api from '../lib/axios';
+import RateLimitedUI from '../components/rateLimitedUI';
 
 const tips = [
   {
@@ -11,7 +9,7 @@ const tips = [
     icon: Target,
     title: 'Start with the Timeline',
     content:
-      'Map out the events chronologically. Who was where and when? Look for gaps in alibis and overlapping timeframes. The murder occurred between 11:30-11:45 PM - focus on movements during this window.',
+      'Map out the events chronologically. Who was where and when? Look for gaps in alibis and overlapping timeframes. The murder occurred between 8:00-9:00 PM - focus on movements during this window.',
   },
   {
     id: 't2',
@@ -72,26 +70,15 @@ const tips = [
 ];
 
 export function DetectivesNotebook() {
-  const [settings, setSettings] = useState<EventSettings[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { settings, settingsLoading, isRateLimited } = useApp();
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await api.get("/settings");
-        console.log(res.data);
-        setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
-      } catch (error) {
-        console.log("Error in fetchSettings:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchSettings();
-  }, []);
+  if (isRateLimited) {
+    return (
+      <RateLimitedUI />
+    )
+  }
 
-  if (loading || !settings.length) {
+  if (settingsLoading || !settings) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
@@ -99,7 +86,7 @@ export function DetectivesNotebook() {
     );
   }
 
-  if (!settings[0].isActive && !settings[0].startTime) {
+  if (!settings.isActive && !settings.startTime) {
     return (
       <div className="text-center py-12">
         <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />

@@ -1,50 +1,24 @@
 import { useApp } from '../context/AppContext';
 import { Search, FileText, Users, BookOpen, Settings, LogOut, Clock, LoaderIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import api from '../lib/axios';
 
 interface NavigationProps {
   currentPage: string;
   onNavigate: (page: string) => void;
 }
 
-interface Settings {
-  isActive: boolean;
-  startTime: string;
-  endTime: string;
-  remainingDuration: number;
-  currentPhase: number;
-  maxPhases: number;
-}
-
 export function Navigation({ currentPage, onNavigate } : NavigationProps) {
-  const { user, logout } = useApp();
-  const [settings, setSettings] = useState<Settings[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, logout, settings, settingsLoading } = useApp();
   const [timeRemaining, setTimeRemaining] = useState<string>('');
 
-  const fetchSettings = async () => {
-    try {
-      const res = await api.get("/settings");
-      console.log(res.data);
-      setSettings(res.data); //Settings array will only contain one object, hence using settings[0] henceforth.
-    } catch (error) {
-      console.log("Error in fetchSettings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   useEffect(() => {
-      fetchSettings();
-  }, []);
-
-  useEffect(() => {
-    if (!settings.length || !settings[0].isActive || !settings[0].endTime) return;
+    if (!settings || !settings.isActive || !settings.endTime) return;
 
     const interval = setInterval(() => {
       const now = new Date();
-      const end = new Date(settings[0].endTime);
+      const end = new Date(settings.endTime);
       const diff = end.getTime() - now.getTime();
       
       if (diff <= 0) {
@@ -72,7 +46,7 @@ export function Navigation({ currentPage, onNavigate } : NavigationProps) {
     navItems.unshift({ id: 'admin', label: 'Admin', icon: Settings });
   }
 
-   if (loading || !settings.length) {
+   if (settingsLoading || !settings) {
       return (
         <div className="min-h-screen bg-base-200 flex items-center justify-center">
           <LoaderIcon className="animate-spin size-10" />
@@ -117,7 +91,7 @@ export function Navigation({ currentPage, onNavigate } : NavigationProps) {
           {/* Right Section */}
           <div className="flex items-center gap-4">
             {/* Countdown Timer */}
-            {settings[0].startTime && (
+            {settings.startTime && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
                 <Clock className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-primary">{timeRemaining}</span>
@@ -164,7 +138,7 @@ export function Navigation({ currentPage, onNavigate } : NavigationProps) {
         </div>
 
         {/* Mobile Timer */}
-        {settings[0].isActive && settings[0].endTime && (
+        {settings.isActive && settings.endTime && (
           <div className="md:hidden pb-2">
             <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
               <Clock className="w-4 h-4 text-primary" />
