@@ -2,25 +2,11 @@ import Evidence from "../models/evidenceModel.js";
 
 export async function getAllEvidence(req, res) {
   try {
-    const allEvidence = await Evidence.find().sort({ createdAt: -1 });
+    const allEvidence = await Evidence.find().sort({ phase: -1 });
     res.status(200).json(allEvidence);
   } catch (error) {
     console.error("Error in getAllEvidence controller:", error);
     res.status(500).json({ message: "Internal Server Error." });
-  }
-}
-
-export async function getEvidence(req, res) {
-  try {
-    const evidence = await Evidence.findById(req.params.id);
-
-    if (!evidence)
-      return res.status(404).json({ message: "Evidence not found." });
-
-    res.status(200).json(evidence);
-  } catch (error) {
-    console.error("Error in getEvidence controller", error);
-    res.status(500).json({ message: "Internal server error." });
   }
 }
 

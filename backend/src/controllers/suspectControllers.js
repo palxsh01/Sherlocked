@@ -3,7 +3,7 @@ import Suspect from "../models/suspectModel.js";
 //For all users
 export async function getAllSuspects(req, res) {
   try {
-    const suspects = await Suspect.find().sort({ createdAt : -1 });
+    const suspects = await Suspect.find().sort({ phase : -1 });
     res.status(200).json(suspects);
   } catch (error) {
     console.error("Error in getAllSuspects controller: ", error);
@@ -12,19 +12,6 @@ export async function getAllSuspects(req, res) {
 }
 
 //For admin users only
-export async function getSuspect(req, res) {
-  try {
-    const suspect = await Suspect.findById(req.params.id);
-
-    if (!suspect) return res.status(404).json({ message: "Suspect not found." });
-    
-    res.status(200).json(suspect);
-  } catch (error) {
-    console.error("Error in getSuspect controller", error);
-    res.status(500).json({ message: "Internal server error." });
-  }
-}
-
 export async function newSuspect(req, res) {
   try {
     const { phase, name, role, age, background, relationship, alibi, motive } = req.body;
