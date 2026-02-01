@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { UserCircle, Check, X, Lock, LoaderIcon } from 'lucide-react';
 import { type Suspect } from "../lib/suspectInterface";
@@ -10,6 +10,7 @@ export function SuspectsPage() {
   const [suspectStatus, setSuspectStatus] = useState<Record<string, 'cleared' | 'suspected' | null>>({});
   const [loading, setLoading] = useState(true);
   const [suspectsLoaded, setSuspectsLoaded] = useState(false);
+  const targetRef = useRef<HTMLDivElement>(null);
   const { settings, settingsLoading } = useApp();
 
   useEffect(() => {
@@ -86,7 +87,13 @@ export function SuspectsPage() {
           {availableSuspects.map((suspect) => (
             <button
               key={suspect._id}
-              onClick={() => setSelectedSuspect(suspect)}
+              onClick={() => {
+                setSelectedSuspect(suspect);
+                targetRef.current?.scrollIntoView({ 
+                  behavior: 'smooth',
+                  block: 'start'
+                })
+              }}
               className={`w-full text-left p-4 rounded-lg border transition-all relative ${
                 selectedSuspect?._id === suspect._id
                   ? 'bg-primary/10 border-primary'
@@ -163,7 +170,7 @@ export function SuspectsPage() {
         </div>
 
         {/* Suspect Details */}
-        <div className="lg:col-span-2">
+        <div ref={targetRef} className="lg:col-span-2">
           {selectedSuspect ? (
             <div className="p-6 bg-card border border-border rounded-lg space-y-6">
               {/* Header */}
