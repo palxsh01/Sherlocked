@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { type Evidence } from "../lib/evidenceInterface";
 import api from "../lib/axios";
@@ -22,6 +22,7 @@ export function EvidenceRoom() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [loading, setLoading] = useState(true);
   const [evidenceLoaded, setEvidenceLoaded] = useState(false);
+  const targetRef = useRef<HTMLDivElement>(null);
   const { settings, settingsLoading } = useApp();
 
   useEffect(() => {
@@ -52,6 +53,8 @@ export function EvidenceRoom() {
       setSelectedMediaUrl(null);
     }
   }, [isImageModalOpen]);
+
+
   
   if (loading || !settings) {
     return (
@@ -97,7 +100,6 @@ export function EvidenceRoom() {
     }
   };
 
-
   if (!settings.isActive && !settings.startTime) {
     return (
       <div className="text-center py-12">
@@ -135,7 +137,13 @@ export function EvidenceRoom() {
             return (
               <button
                 key={evidence._id}
-                onClick={() => setSelectedEvidence(evidence)}
+                onClick={() => {
+                  setSelectedEvidence(evidence); 
+                  targetRef.current?.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                  })
+                }}
                 className={`w-full text-left p-4 rounded-lg border transition-all ${
                   selectedEvidence?._id === evidence._id
                     ? "bg-primary/10 border-primary"
@@ -181,7 +189,7 @@ export function EvidenceRoom() {
         </div>
 
         {/* Evidence Details */}
-        <div className="lg:col-span-2">
+        <div ref={targetRef} className="lg:col-span-2">
           {selectedEvidence ? (
             <div className="p-6 bg-card border border-border rounded-lg">
               <div className="flex items-start gap-3 mb-4">
